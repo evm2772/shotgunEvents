@@ -1,22 +1,9 @@
-# import os
-# import subprocess
-#
-# script = os.path.normpath(os.path.join(os.path.dirname(__file__), '../sh/sync_textures.sh'))
-# print ('script = %s' % script)
-# subprocess.call([script])
-
-
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
 
 import sys, os, multiprocessing, re, subprocess
-# from PySide.QtGui  import *
-# from PySide.QtCore import *
-
-from PySide2.QtCore import *
-from PySide2.QtGui import *
-from PySide2.QtWidgets import *
-
+from PyQt4.QtGui  import *
+from PyQt4.QtCore import *
 
 inputArgs = sys.argv[1:]
 if len(inputArgs)==1:
@@ -494,7 +481,8 @@ Supported formats: """+str(imageFormats))
 
 
         if len(convertCommands)>0:
-
+            print convertCommands
+            return
             for convertCommand in convertCommands:
                 # print "convertCommand",convertCommand,type(convertCommand)
                 # progressBar+=persentVal
@@ -556,7 +544,8 @@ if __name__ == '__main__':
     tg.show()
     # tg.pathString.setText("/home/asergeev/_work/test_folder/textures/leaves_color/v01/leaves_color.1001.tif")
     # tg.pathString.setText("/home/asergeev/_work/test_folder/textures/branches_color/v01")
-    tg.pathString.setText("/home/asergeev/_work/test_folder/textures/leaves_color/v01/leaves_color.1001.tif, /home/asergeev/_work/test_folder/textures/leaves_color/v01/leaves_diffuse.1001.tif")
+    tg.pathString.setText("/home/emelkov/devel/temp/admiral_house_b_v01_color.1011.tif, "
+                          "/home/emelkov/devel/temp/admiral_house_b_v01_color.1001.tif")
     # tg.pathString.setText(", ".join(["/home/asergeev/_work/test_folder/textures/leaves_color/v01",
     #                                 "/home/asergeev/_work/test_folder/textures/branches_color/v01/vprchecker.png",
     #                                 "/home/asergeev/_work/test_folder/textures/branches_color/v01/arc_big_disp_16.1001.tif",
