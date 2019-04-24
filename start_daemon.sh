@@ -4,6 +4,6 @@ export PYTHONPATH=${PYTHONPATH}:/mnt/storage/rnd_tools/ppline/dev/python-api
 
 #test plugin:
 export SGDAEMON_LOGARGS_NAME=sync_textures.py
-export SGDAEMON_LOGARGS_KEY='cpzkhirtrtp)wrruljddfz7Rs'
+export SGDAEMON_LOGARGS_KEY='**************************'
 
 python2 /mnt/storage/rnd_tools/ppline/dev/shotgunEvents/src/shotgunEventDaemon.py foreground
