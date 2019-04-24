@@ -9,8 +9,36 @@
 # See docs folder for detailed usage info.
 
 import os
+import sys
 import logging
+from pprint import pprint, pformat
+import subprocess
+import traceback
+import fnmatch
+import re
 
+
+def textures_parser(root_folder, logger):
+    masks = ["*.bmp", "*.exr", "*.gif", "*.hdri", "*.jpeg", "*.jpg", "*.png", "*.psd", "*.tiff", "*.tif", "*.tga"]
+    includes = '|'.join([fnmatch.translate(x) for x in masks])
+    #print includes
+    texture_paths = []
+    for (dirpath, dirnames, filenames) in os.walk(root_folder):
+        if dirnames:
+            # find versions:
+            version_dirs = [d for d in dirnames if re.match(r'v\d\d', d)]
+            if version_dirs:
+                version_dirs.sort() # for any case ;-)
+                last_version_dir = os.path.join(dirpath, version_dirs[-1])
+                logger.debug('Last version dir: {0} --> {1}'.format(version_dirs, last_version_dir))
+                for (dirpath, dirnames, filenames) in os.walk(last_version_dir):
+                    files = [f for f in filenames if re.match(includes, f)]
+                    logger.debug ('Found files: %s' % str(files))
+                    for f in files:
+                        texture_paths.append(os.path.join(last_version_dir, f))
+
+    logger.debug('Files for sync: \n %s' % pformat(texture_paths))
+    return texture_paths
 
 def registerCallbacks(reg):
     """
@@ -55,35 +83,6 @@ def registerCallbacks(reg):
     # for enabling and disabling debugging on a per plugin basis.
     reg.logger.setLevel(logging.DEBUG)
 
-from pprint import pprint, pformat
-import subprocess
-import traceback
-import fnmatch
-import re
-
-def textures_parser(root_folder, logger):
-    masks = ["*.bmp", "*.exr", "*.gif", "*.hdri", "*.jpeg", "*.jpg", "*.png", "*.psd", "*.tiff", "*.tif", "*.tga"]
-    includes = '|'.join([fnmatch.translate(x) for x in masks])
-    #print includes
-    texture_paths = []
-    for (dirpath, dirnames, filenames) in os.walk(root_folder):
-        if dirnames:
-            # find versions:
-            version_dirs = [d for d in dirnames if re.match(r'v\d\d', d)]
-            if version_dirs:
-                version_dirs.sort() # for any case ;-)
-                last_version_dir = os.path.join(dirpath, version_dirs[-1])
-                logger.debug('Last version dir: {0} --> {1}'.format(version_dirs, last_version_dir))
-                for (dirpath, dirnames, filenames) in os.walk(last_version_dir):
-                    files = [f for f in filenames if re.match(includes, f)]
-                    logger.debug ('Found files: %s' % str(files))
-                    for f in files:
-                        texture_paths.append(os.path.join(last_version_dir, f))
-
-    logger.debug('Files for sync: \n %s' % pformat(texture_paths))
-    return texture_paths
-
-    
 
 def sync_textures(sg, logger, event, args):
     """
@@ -95,12 +94,14 @@ def sync_textures(sg, logger, event, args):
     :param args: Any additional misc arguments passed through this plugin.
     """
     logger.debug("Event: %s" % pformat(dict(event)))
-    logger.debug("Entity: %s" % pformat(dict(event['entity'])))
-    logger.debug("Meta: %s" % pformat(dict(event['meta'])))
+    #logger.debug("Entity: %s" % pformat(dict(event['entity'])))
+    #logger.debug("Meta: %s" % pformat(dict(event['meta'])))
 
     task_name = event['entity']['name']
     new_status = event['meta']['new_value']
     old_status = event['meta']['old_value']
+    project_id = event['project']['id'] #{'id': 92, 'name': 'SOUZ_S', 'type': 'Project'}
+    logger.warning('!!Warning!! working for project "SOUZ_S" (id = %s) only!!' % project_id)
     logger.debug("%s status: %s --> %s" % (event['entity'], old_status, new_status))
     # try:
     #     #task_entity = sg.find_one('Task', [['id', 'is', event['entity']['id']]], ['entity'])
@@ -123,16 +124,14 @@ def sync_textures(sg, logger, event, args):
     # except Exception as err:
     #     print ('EXCEPTION!!!')
     #     logger.debug(traceback.format_exc())
-    if task_name == 'texture' and new_status == 'cmpt':
+    if task_name == 'texture' and new_status == 'cmpt' and project_id == 92: #todo remove id checking later
+
         # найдем ассет или сабассет с этим таском
         # filters = [['tasks', 'is', event['entity']]]
         # fields = ['code']
         # task_entity = sg.find_one('CustomEntity01', filters, fields) or sg.find_one('Asset', filters, fields)
         # logger.debug('%s' % task_entity)
-
-
-
-        logger.info("-----------  BINGO. Sync starts: %s" % task_name)
+        logger.info("Copy textures to Panasas starts: %s" % task_name)
 
         # найдем ассет или сабассет с этим таском
         filters = [['tasks', 'is', event['entity']]]
@@ -190,15 +189,43 @@ def sync_textures(sg, logger, event, args):
             logger.error('No filesystem location. Must be corrected.')
             return
 
-        script = os.path.normpath(os.path.join(os.path.dirname(__file__), '../sh/sync_textures.sh'))
-        logger.debug('script = %s' % script)
+        dst_log = os.path.join(panasas_textures_dir, 'auto_export.log')
+        cmd = os.path.normpath(os.path.join(os.path.dirname(__file__), '../scripts/sync_textures.sh %s %s %s > %s' %
+                                            (storage_textures_dir, panasas_textures_dir, project_id, dst_log)))
 
-        for f in files:
-            #dst_f = os.path.join(panasas_textures_dir, os.p ath.basename(f))
+        subprocess.Popen(cmd, shell=True)
 
-            #os.system('cp %s %s' % (f, dst_f))
-            cmd = 'rsync -av --delete %s %s' % (f, panasas_textures_dir)
-            proc = subprocess.Popen(cmd, shell=True)
 
-            logger.debug('#### rsync: %s --> %s' % (f, panasas_textures_dir))
-            #panasas_textures_dir
+        # # Попробуем сервер! Потом!
+        # logger.debug('Starting maya server...')
+        # import sys
+        # tools_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../../tools'))
+        # logger.debug('Set tools: %s' % tools_path)
+        # sys.path.append(tools_path)
+        # sys.path.append(os.path.join(tools_path, 'python', 'site-packages'))
+        # sys.path.append(os.path.join(tools_path, 'python', 'bin'))
+        # #append_path_to_env_var('PYTHONPATH', os.path.join(tools_path, 'python', 'site-packages'))
+        # #append_path_to_env_var('PATH', os.path.join(tools_path, 'python', 'bin'))
+        # import setup_tools
+        # setup_tools.make()
+        # env = os.environ.copy()
+        # # ------------------env
+        # # os.environ['DKFX_TOOLS'] = r'y:\rnd_tools\ppline\dev\tools'
+        # from maya_prefs.mayaserver import client
+        # appport = client.start_process(env)
+        # logger.debug ('>>> appport: %s' % appport)
+        # sock = client.create_client(appport)
+        # # проблемы с библиотекой ((
+        # # File
+        # # "/mnt/storage/rnd_tools/ppline/dev/tools/python/site-packages/zmq/backend/cython/__init__.py", line
+        # # 6, in < module >
+        # # from . import (constants, error, message, context,
+        # #                ImportError: cannot
+        # # import name
+        # # constants
+        # client.sendrecv(sock, ('exec', 'import maya.cmds as cmds;print "!!!!!!!! %s" % cmds.ls()'))
+        # #client.sendrecv(sock, ('exec', 'import maya_prefs.mayaserver.client as clnt'))
+        # #client.sendrecv(sock, ('eval', 'clnt.sg2(92, 55)'))
+
+
+
