@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-
-# отредактированный скипт для использования без гуи и конвертации текстстур в tx в нужный color space. Просто здесь лежит.
-# Для использования закинуть в mtoa
-
 import maya.cmds as cmds
 import maya.utils as utils
 import maya.mel
@@ -21,7 +16,7 @@ from mtoa import core
 import os
 import fnmatch
 
-from pprint import pformat
+from pprint import pformat, pprint
 import re
 
 def textures_parser(root_folder):
@@ -155,46 +150,51 @@ class MakeTxThread (threading.Thread):
             # but in case it hasn't been updated correctly
             # it's still better to ask maya again what is the color space
             nodes = textureLine[3]
-            colorSpace = 'auto'
-            conflictSpace = False
+
+            colorSpace = 'Raw'
+            if '_color' in os.path.basename(texture):
+                colorSpace = 'sRGB'
+
+
+            #conflictSpace = False
 
             # color spaces didn't exist in versions < 2016
-            if maya_version >= 2016:
-                for node in nodes:
-                    nodeColorSpace = cmds.getAttr(node+'.colorSpace')
-                    if colorSpace != 'auto' and colorSpace != nodeColorSpace:
-                        conflictSpace=True
-
-                    colorSpace = nodeColorSpace
-
-                if colorSpace == 'auto' and textureLine[2] != '':
-                    colorSpace = textureLine[2]
-
-            if not texture:
-                continue;
-            # stopCreation has been called
-            if not self.txManager.process:
-                break
-
-            # if a conflict is found, pop-up a dialog
-            if conflictSpace:
-                msg = os.path.basename(texture)
-                msg += '\n'
-                msg += 'has conflicting Color Spaces.\n'
-                msg += 'Use ('
-                msg += colorSpace
-                msg += ') ?'
-
-                result = cmds.confirmDialog(
-                    title='Conflicting Color Spaces',
-                    message=msg,
-                    button=['OK', 'Cancel'],
-                    defaultButton='OK',
-                    cancelButton='Cancel',
-                    dismissString='Cancel')
-
-                if result == 'Cancel':
-                    break
+            # if maya_version >= 2016:
+            #     for node in nodes:
+            #         nodeColorSpace = cmds.getAttr(node+'.colorSpace')
+            #         if colorSpace != 'auto' and colorSpace != nodeColorSpace:
+            #             conflictSpace=True
+            #
+            #         colorSpace = nodeColorSpace
+            #
+            #     if colorSpace == 'auto' and textureLine[2] != '':
+            #         colorSpace = textureLine[2]
+            #
+            # if not texture:
+            #     continue;
+            # # stopCreation has been called
+            # if not self.txManager.process:
+            #     break
+            #
+            # # if a conflict is found, pop-up a dialog
+            # if conflictSpace:
+            #     msg = os.path.basename(texture)
+            #     msg += '\n'
+            #     msg += 'has conflicting Color Spaces.\n'
+            #     msg += 'Use ('
+            #     msg += colorSpace
+            #     msg += ') ?'
+            #
+            #     result = cmds.confirmDialog(
+            #         title='Conflicting Color Spaces',
+            #         message=msg,
+            #         button=['OK', 'Cancel'],
+            #         defaultButton='OK',
+            #         cancelButton='Cancel',
+            #         dismissString='Cancel')
+            #
+            #     if result == 'Cancel':
+            #         break
 
 
             # Process all the files that were found previously for this texture (eventually multiple tokens)
@@ -250,9 +250,11 @@ class MakeTxThread (threading.Thread):
             if (status[i] == AiTxUpdated):
                 self.filesCreated += 1
                 AiMsgInfo("[mtoa.tx] %d: %s was updated", i, source_files[i])
+                print("[mtoa.tx] %d: %s was updated", i, source_files[i])
             elif (status[i] == AiTxError):
                 self.createdErrors += 1
                 AiMsgWarning("[mtoa.tx] %d: %s could not be updated", i, source_files[i])
+                print("[mtoa.tx] %d: %s could not be updated", i, source_files[i])
 
 
             # need to invalidate the TX texture from the cache
@@ -266,13 +268,33 @@ class MakeTxThread (threading.Thread):
 
         #ctrlPath = '|'.join([self.txManager.window, 'groupBox_2', 'pushButton_7']);
         #utils.executeDeferred(cmds.button, ctrlPath, edit=True, enable=False);
-        print 222
+
         self.txManager.process = True
         utils.executeDeferred(self.txManager.updateList)
 
         # an arnold scene was created above, let's delete it now
         if not arnoldUniverseActive:
             cmds.arnoldScene(mode="destroy")
+        from shared.utils.file_utils import need_update
+        import shutil
+        for f in [item[0] for item in textureList]:
+            basename = os.path.splitext(f)[0]
+            print '-'*200
+            tx_src = '%s.tx' % os.path.splitext(f)[0]
+            tx_dst = os.path.join(os.environ.get('PANASAS_TEXTURES_DIR'), os.path.basename(tx_src))
+            # if tx_dst == tx_src:
+            #     raise Exception('Inorect source location: %s' % tx_src)
+            print 'SRC:  %s' % tx_src
+            print 'DST:  %s' % tx_dst
+            update = need_update(tx_src, tx_dst)
+            print 'need_update: %s' % update
+            # directories must exists - checked in daemon plugin!
+            if update:
+                shutil.copyfile(tx_src, tx_dst)
+                print 'Updated: %s -> %s' % (tx_src, tx_dst)
+            else:
+                print 'Not updated: %s -> %s\n\n' % (tx_src, tx_dst)
+
 
 
 def GetTxList(txItems, filesCount):
@@ -671,10 +693,8 @@ class MtoATxManager(object):
             self.selectedItems.append(item)
             self.filesToCreate += 1
         #[[u'/prefs/toolkit/temp/crowds_bag_a_color.1001.tif', 0, 'sRGB', '', [u'/prefs/toolkit/temp/crowds_bag_a_color.1001.tif']]] SAMPLE
-        print '!! selectedItems: ', self.selectedItems
-        #updateProgressMessage(self.window, self.filesCreated, self.filesToCreate, 0)
-        #ctrlPath = '|'.join([self.window, 'groupBox_3', 'label_10']);
-        #cmds.text(ctrlPath, edit=True, label="");
+        print 'selectedItems: %s' % pformat(self.selectedItems)
+
 
 
     # def showFullPathChange(self, *args):

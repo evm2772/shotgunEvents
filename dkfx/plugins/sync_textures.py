@@ -141,7 +141,7 @@ def sync_textures(sg, logger, event, args):
             logger.debug('"Panasas" textures directory: %s' % panasas_textures_dir)
             if not os.path.isdir(panasas_textures_dir):
                 logger.debug('"Panasas" textures directory is not found. Creating: %s' % panasas_textures_dir)
-                os.makedirs(panasas_textures_dir) #todo return
+                os.makedirs(panasas_textures_dir)
                 logger.debug('"Panasas" textures directory was created:  %s' % panasas_textures_dir)
 
 
@@ -150,14 +150,12 @@ def sync_textures(sg, logger, event, args):
 
             if not os.path.isdir(storage_as_dir):
                 logger.error('"Storage" asset(subasset) directory is not found: %s' % storage_as_dir)
-                # todo note?
                 return
 
             storage_textures_dir = os.path.join(storage_as_dir, 'textures')
             logger.debug('"Storage" textures directory: %s' % storage_textures_dir)
             if not os.path.isdir(storage_textures_dir):
                 logger.error('"Storage" textures directory not found: %s' % storage_textures_dir)
-                # todo note?
                 return
             
             files = textures_parser(storage_textures_dir, logger)
