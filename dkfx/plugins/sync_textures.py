@@ -21,7 +21,6 @@ import re
 def textures_parser(root_folder, logger):
     masks = ["*.bmp", "*.exr", "*.gif", "*.hdri", "*.jpeg", "*.jpg", "*.png", "*.psd", "*.tiff", "*.tif", "*.tga"]
     includes = '|'.join([fnmatch.translate(x) for x in masks])
-    #print includes
     texture_paths = []
     for (dirpath, dirnames, filenames) in os.walk(root_folder):
         if dirnames:
@@ -94,37 +93,14 @@ def sync_textures(sg, logger, event, args):
     :param args: Any additional misc arguments passed through this plugin.
     """
     logger.debug("Event: %s" % pformat(dict(event)))
-    #logger.debug("Entity: %s" % pformat(dict(event['entity'])))
-    #logger.debug("Meta: %s" % pformat(dict(event['meta'])))
-
     task_name = event['entity']['name']
     new_status = event['meta']['new_value']
     old_status = event['meta']['old_value']
     project_id = event['project']['id'] #{'id': 92, 'name': 'SOUZ_S', 'type': 'Project'}
     logger.warning('!!Warning!! working for project "SOUZ_S" (id = %s) only!!' % project_id)
     logger.debug("%s status: %s --> %s" % (event['entity'], old_status, new_status))
-    # try:
-    #     #task_entity = sg.find_one('Task', [['id', 'is', event['entity']['id']]], ['entity'])
-    #     filters = [['tasks', 'is', event['entity']]]
-    #     fields = ['code', 'sg_published_files']
-    #     # найдем ассет или сабассет с этим таском
-    #     task_entity = sg.find_one('CustomEntity01', filters, fields) or sg.find_one('Asset', filters, fields)
-    #     #task_entity = sg.find_one('CustomEntity01', [[event['entity'], 'in', 'tasks']], [])
-    #     logger.info(">>>> %s" % str(task_entity))
-    #
-    #
-    #     filters = [['linked_entity_type', 'in', ['Asset', 'CustomEntity01']],
-    #                ['entity', 'is', task_entity]]
-    #
-    #
-    #     fields = ['path']
-    #     # путь к ассету или сабассету
-    #     filesys_loc = sg.find_one('FilesystemLocation', filters, fields)
-    #     logger.info(">>>> filesys_loc = %s" % pformat(filesys_loc))
-    # except Exception as err:
-    #     print ('EXCEPTION!!!')
-    #     logger.debug(traceback.format_exc())
-    if task_name == 'texture' and new_status == 'cmpt' and project_id == 92: #todo remove id checking later
+
+    if task_name == 'txtr' and new_status == 'cmpt' and project_id == 92: #todo remove id checking later
 
         # найдем ассет или сабассет с этим таском
         # filters = [['tasks', 'is', event['entity']]]
@@ -143,14 +119,14 @@ def sync_textures(sg, logger, event, args):
         filters = [['linked_entity_type', 'in', ['Asset', 'CustomEntity01']],
                    ['entity', 'is', task_entity]]
         fields = ['path']
-        filesys_loc = sg.find_one('FilesystemLocation', filters, fields)
-
+        #filesys_loc = sg.find_one('FilesystemLocation', filters, fields)
         filesys_locs = sg.find('FilesystemLocation', filters, fields)
 
         if len(filesys_locs) > 1:
             logger.error('Not single location: %s. Must be clean up')
             return
 
+        filesys_loc = filesys_locs[0]
         if filesys_loc:
             #/mnt/storage/
 
@@ -193,39 +169,12 @@ def sync_textures(sg, logger, event, args):
         cmd = os.path.normpath(os.path.join(os.path.dirname(__file__), '../scripts/sync_textures.sh %s %s %s > %s' %
                                             (storage_textures_dir, panasas_textures_dir, project_id, dst_log)))
 
+        # debug:
+        cmd = os.path.normpath(os.path.join(os.path.dirname(__file__), '../scripts/sync_textures.sh %s %s %s 2>&1 | tee %s' %
+                                            (storage_textures_dir, panasas_textures_dir, project_id, dst_log)))
+        
         subprocess.Popen(cmd, shell=True)
 
-
-        # # Попробуем сервер! Потом!
-        # logger.debug('Starting maya server...')
-        # import sys
-        # tools_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../../tools'))
-        # logger.debug('Set tools: %s' % tools_path)
-        # sys.path.append(tools_path)
-        # sys.path.append(os.path.join(tools_path, 'python', 'site-packages'))
-        # sys.path.append(os.path.join(tools_path, 'python', 'bin'))
-        # #append_path_to_env_var('PYTHONPATH', os.path.join(tools_path, 'python', 'site-packages'))
-        # #append_path_to_env_var('PATH', os.path.join(tools_path, 'python', 'bin'))
-        # import setup_tools
-        # setup_tools.make()
-        # env = os.environ.copy()
-        # # ------------------env
-        # # os.environ['DKFX_TOOLS'] = r'y:\rnd_tools\ppline\dev\tools'
-        # from maya_prefs.mayaserver import client
-        # appport = client.start_process(env)
-        # logger.debug ('>>> appport: %s' % appport)
-        # sock = client.create_client(appport)
-        # # проблемы с библиотекой ((
-        # # File
-        # # "/mnt/storage/rnd_tools/ppline/dev/tools/python/site-packages/zmq/backend/cython/__init__.py", line
-        # # 6, in < module >
-        # # from . import (constants, error, message, context,
-        # #                ImportError: cannot
-        # # import name
-        # # constants
-        # client.sendrecv(sock, ('exec', 'import maya.cmds as cmds;print "!!!!!!!! %s" % cmds.ls()'))
-        # #client.sendrecv(sock, ('exec', 'import maya_prefs.mayaserver.client as clnt'))
-        # #client.sendrecv(sock, ('eval', 'clnt.sg2(92, 55)'))
 
 
 
