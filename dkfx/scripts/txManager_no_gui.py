@@ -71,13 +71,11 @@ def textures_parser(root_folder):
 def do(textures_dir):
     core.createOptions()
     man = MtoATxManager()
-    man.create()
+    #man.create()
     man.selectedFilesFromFolder(textures_dir)
     man.createTx()
     print 'finished'
     #win.refreshList()
-
-
 
 
 def isImage(file):
@@ -281,7 +279,11 @@ class MakeTxThread (threading.Thread):
             basename = os.path.splitext(f)[0]
             print '-'*200
             tx_src = '%s.tx' % os.path.splitext(f)[0]
-            tx_dst = os.path.join(os.environ.get('PANASAS_TEXTURES_DIR'), os.path.basename(tx_src))
+            #tx_dst = os.path.join(os.environ.get('PANASAS_TEXTURES_DIR'), os.path.basename(tx_src))
+
+            tx_dst = tx_src.replace(os.environ.get('STORAGE_TEXTURES_DIR'), os.environ.get('PANASAS_TEXTURES_DIR'))
+            #remove version folder:
+            tx_dst = re.sub(r'/v\d\d/', '/', tx_dst)
             # if tx_dst == tx_src:
             #     raise Exception('Inorect source location: %s' % tx_src)
             print 'SRC:  %s' % tx_src
@@ -289,7 +291,13 @@ class MakeTxThread (threading.Thread):
             update = need_update(tx_src, tx_dst)
             print 'need_update: %s' % update
             # directories must exists - checked in daemon plugin!
+
             if update:
+                dst_dir = os.path.dirname(tx_dst)
+                if not os.path.isdir(dst_dir):
+                    print ('Creating: %s' % dst_dir)
+                    os.makedirs(dst_dir)
+                    print('directory was created:  %s' % dst_dir)
                 shutil.copyfile(tx_src, tx_dst)
                 print 'Updated: %s -> %s' % (tx_src, tx_dst)
             else:
@@ -433,32 +441,32 @@ class MtoATxManager(object):
     def create(self):
         print 'UI skipped'
         return
-        if cmds.window(self.window, exists=True):
-            cmds.deleteUI(self.window);
-        self.window = cmds.loadUI(uiFile=self.uiFile, verbose=False)
-
-        cmds.showWindow(self.window);
-        try:
-            initPos = cmds.windowPref( self.window, query=True, topLeftCorner=True )
-            if initPos[0] < 0:
-                initPos[0] = 0
-            if initPos[1] < 0:
-                initPos[1] = 0
-            cmds.windowPref( self.window, edit=True, topLeftCorner=initPos )
-        except :
-            pass
-
-        ctrlPath = '|'.join([self.window, 'radioButton']);
-        cmds.radioButton(ctrlPath, edit=True, select=True);
-
-        ctrlPath = '|'.join([self.window, 'groupBox_4']);
-        cmds.control(ctrlPath, edit=True, enable=False);
-
-        ctrlPath = '|'.join([self.window, 'groupBox_2', 'pushButton_7']);
-        cmds.button(ctrlPath, edit=True, enable=False);
-
-        ctrlPath = '|'.join([self.window, 'groupBox_2', 'lineEdit']);
-        cmds.textField(ctrlPath, edit=True, text="-v -u --unpremult --oiio");
+        # if cmds.window(self.window, exists=True):
+        #     cmds.deleteUI(self.window);
+        # self.window = cmds.loadUI(uiFile=self.uiFile, verbose=False)
+        #
+        # cmds.showWindow(self.window);
+        # try:
+        #     initPos = cmds.windowPref( self.window, query=True, topLeftCorner=True )
+        #     if initPos[0] < 0:
+        #         initPos[0] = 0
+        #     if initPos[1] < 0:
+        #         initPos[1] = 0
+        #     cmds.windowPref( self.window, edit=True, topLeftCorner=initPos )
+        # except :
+        #     pass
+        #
+        # ctrlPath = '|'.join([self.window, 'radioButton']);
+        # cmds.radioButton(ctrlPath, edit=True, select=True);
+        #
+        # ctrlPath = '|'.join([self.window, 'groupBox_4']);
+        # cmds.control(ctrlPath, edit=True, enable=False);
+        #
+        # ctrlPath = '|'.join([self.window, 'groupBox_2', 'pushButton_7']);
+        # cmds.button(ctrlPath, edit=True, enable=False);
+        #
+        # ctrlPath = '|'.join([self.window, 'groupBox_2', 'lineEdit']);
+        # cmds.textField(ctrlPath, edit=True, text="-v -u --unpremult --oiio");
 
     def displayList(self):
         #ctrlPath = '|'.join([self.window, 'groupBox', 'listWidget']);
@@ -662,7 +670,7 @@ class MtoATxManager(object):
     def selectedFilesFromFolder(self, folder):
         #ctrlPath = '|'.join([self.window, 'groupBox_4', 'lineEdit_2']);
         #folder = cmds.textField(ctrlPath, query=True, text=True);
-        print 'selectedFilesFromFolder: floder = ', folder
+        print 'selectedFilesFromFolder: folder = ', folder
 
         self.selectedItems = []
         self.filesToCreate = 0
