@@ -69,8 +69,8 @@ def registerCallbacks(reg):
     eventFilter = {'Shotgun_Task_Change': 'sg_status_list'}
 
     reg.registerCallback(
-        os.environ["SGDAEMON_LOGARGS_NAME"],
-        os.environ["SGDAEMON_LOGARGS_KEY"],
+        os.environ["SGDAEMON_SCRIPT_NAME"],
+        os.environ["SGDAEMON_SCRIPT_KEY"],
         sync_textures,
         eventFilter,
         None,
@@ -97,10 +97,10 @@ def sync_textures(sg, logger, event, args):
     new_status = event['meta']['new_value']
     old_status = event['meta']['old_value']
     project_id = event['project']['id'] #{'id': 92, 'name': 'SOUZ_S', 'type': 'Project'}
-    logger.warning('!!Warning!! working for project "SOUZ_S" (id = %s) only!!' % project_id)
+    #logger.warning('!!Warning!! working for project "SOUZ_S" (id = %s) only!!' % project_id)
     logger.debug("%s status: %s --> %s" % (event['entity'], old_status, new_status))
 
-    if task_name == 'txtr' and new_status == 'cmpt' and project_id == 92: #todo remove id checking later
+    if task_name == 'txtr' and new_status == 'cmpt':
 
         # найдем ассет или сабассет с этим таском
         # filters = [['tasks', 'is', event['entity']]]
