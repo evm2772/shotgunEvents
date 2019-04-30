@@ -42,11 +42,11 @@ def registerCallbacks(reg):
     # User-defined plugin args, change at will.
     args = {
         "target_status": "cmpt",
-        "target_tasks": ['txtr', 'geo'],
+        "tasks": ['txtr', 'geo'],
         "entity_status_field": "sg_status_list",
         "entity_type": "Task",
-        "entity_types": ["Asset", "CustomEntity01"],
-        "skip_statuses": ["fin", "na", "hld"],
+        "linked_entities": ["Asset", "CustomEntity01"],
+        "skip_statuses": []#"fin", "na", "hld"],
     }
 
     # Grab authentication env vars for this plugin. Install these into the env
@@ -175,14 +175,16 @@ def entity_status_update_task_status(sg, logger, event, args):
     #------------------- rnd
     logger.debug(pformat(event))
     logger.debug(user)
-    if user['id'] != 198:
-        logger.warning('#################################Not developer user. Skipping')
-        return
-    else:
-        logger.warning('BINGO !!!!!!!!!!!!!')
+    # if user['id'] != 198:
+    #     logger.warning('#################################Not developer user. Skipping')
+    #     return
+    # else:
+    #     logger.warning('BINGO !!!!!!!!!!!!!')
     #-----------------------
 
-
+    if entity['name'] not in args['tasks']:
+        logger.warning("We are not interested in this task [%s], skipping." % entity['name'])
+        return
 
     # Make sure all our event keys contain values.
     if None in [event_id, field_name, entity, project, old_value, new_value, user]:
@@ -190,9 +192,9 @@ def entity_status_update_task_status(sg, logger, event, args):
         return
 
     # Bail if new_value isn't what we're looking for.
-    if not new_value == args["target_status"]:
-        logger.debug("new_value is %s, not %s, skipping." % (new_value, args["target_status"]))
-        return
+    # if not new_value == args["target_status"]:
+    #     logger.debug("new_value is %s, not %s, skipping." % (new_value, args["target_status"]))
+    #     return
 
     # Make sure the event exists in Shotgun.
     sg_event = sg.find_one(
@@ -266,31 +268,74 @@ def entity_status_update_task_status(sg, logger, event, args):
     #     ["sg_status_list"],
     # )
 
-    
-    # Find tasks with complete geo and txtr
+    filters = [['tasks', 'is', event['entity']]]
+    fields = []
+
+    entity = None
+    for et in args['linked_entities']:
+        entity = sg.find_one(et, filters, fields)
+        if entity:
+            logger.debug('For entity type %s found: %s' % (et, entity))
+            break
+
+
+
+
+
+    # Find all tasks with complete geo and txtr
     tasks = sg.find(
         "Task",
         [
             ["entity", "is", entity],
-            ["content", "in", ["geo", "txtr"]]
+            ["content", "in", ["geo", "txtr", "shad"]]
          ],
         ["sg_status_list", "content"],
     )
+    # tasks = [{'content': 'geo', 'id': 30908, 'sg_status_list': 'cmpt', 'type': 'Task'}, ...]
+    # must contain 3 tasks:
 
-    
-    logger.debug(tasks)
-
-    return
-    # Cue up a change to all our Tasks. Set them to args["target_status"].
+    tasks_statuses = {}
     for task in tasks:
-        if task["sg_status_list"] not in args["skip_statuses"]:
+        tasks_statuses[task['content']] = task['sg_status_list']
+    logger.debug('All tasks: %s' % pformat(tasks))
+    if len(tasks_statuses.keys()) != 3:
+
+        logger.warning('Not all tasks found. Must be "txtr", "geo", "shad"')
+        return
+    logger.debug('Task statuses %s' % pformat(tasks_statuses))
+    # Ex: Task statuses = {'geo': 'cmpt', 'shad': 'wtg', 'txtr': 'cmpt'}
+    # wtg, rdy
+    shad_st = tasks_statuses['shad']
+    txtr_st = tasks_statuses['txtr']
+    geo_st = tasks_statuses['geo']
+
+    logger.debug('shad_st = %s' % shad_st)
+    logger.debug('txtr_st = %s' % txtr_st)
+    logger.debug('geo_st  = %s' % geo_st)
+
+    new_shad_st = None
+    if txtr_st == 'cmpt' and geo_st == 'cmpt':
+        new_shad_st = 'rdy'
+
+    if txtr_st in ['rrq', 'ip'] or geo_st in ['rrq', 'ip']:
+        new_shad_st = 'hld'
+
+    if not new_shad_st:
+        logger.debug('Not triggered. Skipping')
+        return
+
+    for task in tasks:
+        # skip:
+        if task['content'] in ['geo', 'txtr']:
+            continue
+        if shad_st not in args["skip_statuses"]:
             update_message.append("Task with id %s" % task["id"])
             batch_data.append(
                 {
                     "request_type": "update",
                     "entity_type": "Task",
                     "entity_id": task["id"],
-                    "data": {"sg_status_list": args["target_status"]},
+                    "data": {"sg_status_list": new_shad_st},
                 }
             )
 
