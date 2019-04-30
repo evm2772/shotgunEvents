@@ -41,9 +41,11 @@ def registerCallbacks(reg):
 
     # User-defined plugin args, change at will.
     args = {
-        "target_status": "hld",
+        "target_status": "cmpt",
+        "target_tasks": ['txtr', 'geo'],
         "entity_status_field": "sg_status_list",
-        "entity_type": "Asset",
+        "entity_type": "Task",
+        "entity_types": ["Asset", "CustomEntity01"],
         "skip_statuses": ["fin", "na", "hld"],
     }
 
@@ -125,6 +127,24 @@ def is_valid(sg, logger, args):
 
     return True
 
+# EVENT: {'attribute_name': 'sg_status_list',
+#  'created_at': datetime.datetime(2019, 4, 30, 15, 4, 45, tzinfo=<shotgun_api3.lib.sgtimezone.LocalTimezone object at 0x7f9d6a0bd8d0>),
+#  'entity': {'id': 30495, 'name': 'ad', 'type': 'Task'},
+#  'event_type': 'Shotgun_Task_Change',
+#  'id': 2871499,
+#  'meta': {'attribute_name': 'sg_status_list',
+#           'entity_id': 30495,
+#           'entity_type': 'Task',
+#           'field_data_type': 'status_list',
+#           'new_value': 'rdy',
+#           'old_value': 'cmpt',
+#           'type': 'attribute_change'},
+#  'project': {'id': 92, 'name': 'SOUZ_S', 'type': 'Project'},
+#  'session_uuid': '51cb3b12-6a9a-11e9-b201-0242ac110004',
+#  'type': 'EventLogEntry',
+#  'user': {'id': 198, 'name': 'Evgeniy Melkov', 'type': 'HumanUser'}}
+
+
 
 def entity_status_update_task_status(sg, logger, event, args):
     """
@@ -148,6 +168,9 @@ def entity_status_update_task_status(sg, logger, event, args):
     old_value = event.get("meta", {}).get("new_value")
     user = event.get("user")
     event_id = event.get("id")
+    
+
+    logger.debug('##### EVENT: %s' % pformat(event))
 
     #------------------- rnd
     logger.debug(pformat(event))
@@ -158,6 +181,8 @@ def entity_status_update_task_status(sg, logger, event, args):
     else:
         logger.warning('BINGO !!!!!!!!!!!!!')
     #-----------------------
+
+
 
     # Make sure all our event keys contain values.
     if None in [event_id, field_name, entity, project, old_value, new_value, user]:
@@ -215,32 +240,47 @@ def entity_status_update_task_status(sg, logger, event, args):
     batch_data = []
     update_message = []
 
-    # Cue up a change to our entity's description field if our entity's
-    # new_value is args["target_status"] and its description is None.
-    if not entity["description"]:
-        update_message.append("%s with id %s" % (entity["type"], entity["id"]))
-        batch_data.append(
-            {
-                "request_type": "update",
-                "entity_type": entity["type"],
-                "entity_id": entity["id"],
-                "data": {
-                    "description": "%s set this %s to %s." % (
-                        user["name"],
-                        entity["type"],
-                        args["target_status"],
-                    )
-                }
-            }
-        )
+    # # Cue up a change to our entity's description field if our entity's
+    # # new_value is args["target_status"] and its description is None.
+    # if not entity["description"]:
+    #     update_message.append("%s with id %s" % (entity["type"], entity["id"]))
+    #     batch_data.append(
+    #         {
+    #             "request_type": "update",
+    #             "entity_type": entity["type"],
+    #             "entity_id": entity["id"],
+    #             "data": {
+    #                 "description": "%s set this %s to %s." % (
+    #                     user["name"],
+    #                     entity["type"],
+    #                     args["target_status"],
+    #                 )
+    #             }
+    #         }
+    #     )
 
     # Find all the Tasks linked to our entity.
+    # tasks = sg.find(
+    #     "Task",
+    #     [["entity", "is", entity]],
+    #     ["sg_status_list"],
+    # )
+
+    
+    # Find tasks with complete geo and txtr
     tasks = sg.find(
         "Task",
-        [["entity", "is", entity]],
-        ["sg_status_list"],
+        [
+            ["entity", "is", entity],
+            ["content", "in", ["geo", "txtr"]]
+         ],
+        ["sg_status_list", "content"],
     )
+
+    
     logger.debug(tasks)
+
+    return
     # Cue up a change to all our Tasks. Set them to args["target_status"].
     for task in tasks:
         if task["sg_status_list"] not in args["skip_statuses"]:
