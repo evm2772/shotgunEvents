@@ -323,6 +323,9 @@ def entity_status_update_task_status(sg, logger, event, args):
     if not new_shad_st:
         logger.debug('Not triggered. Skipping')
         return
+    if shad_st == new_shad_st:
+        logger.debug('New status [%s] she same as old. Skipping' % new_shad_st)
+        return
 
     for task in tasks:
         # skip:
