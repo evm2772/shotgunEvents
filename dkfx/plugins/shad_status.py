@@ -1,31 +1,8 @@
-# Copyright 2018 Autodesk, Inc.  All rights reserved.
-#
-# Use of this software is subject to the terms of the Autodesk license agreement
-# provided at the time of installation or download, or which otherwise accompanies
-# this software in either electronic or hard copy form.
-#
+# -*- coding: utf-8 -*-
 
 import os
 import shotgun_api3
 from pprint import pprint, pformat
-"""
-This plugin was created for the Shotgun Developer Learning series video titled,
-"The Shotgun Event Daemon." See this page for details:
-
-https://support.shotgunsoftware.com/hc/en-us/articles/115002525494-SG-Learning-Developer-Training
-
-This plugin has not been code-reviewed, QA'd, or used in production. It was
-written primarily to teach developers how to write plugins and avoid common
-pitfalls. Use/modify at your own risk.
-
-When an entity's args["entity_status_field"] field changes to
-args["target_status"], its description field is updated (if it's empty) with the
-name of the user who put it On Hold, and its child Tasks args["entity_status_field"]
-fields are set to args["target_status"], unless they're already set to a status
-in args["skip_statuses"]. If you'd like to change this plugin's behavior, modify
-the "args" in the registerCallbacks function.
-"""
-
 
 def registerCallbacks(reg):
     """
@@ -42,11 +19,11 @@ def registerCallbacks(reg):
     # User-defined plugin args, change at will.
     args = {
         "target_status": "cmpt",
-        "tasks": ['txtr', 'geo'],
+        "tasks": ['txtr', 'geo'],  # trigger tasks
         "entity_status_field": "sg_status_list",
         "entity_type": "Task",
         "linked_entities": ["Asset", "CustomEntity01"],
-        "skip_statuses": []#"fin", "na", "hld"],
+        "skip_statuses": []  #"fin", "na", "hld"],
     }
 
     # Grab authentication env vars for this plugin. Install these into the env
@@ -73,7 +50,7 @@ def registerCallbacks(reg):
     reg.registerCallback(
         script_name,
         script_key,
-        entity_status_update_task_status,
+        shad_status,
         eventFilter,
         args,
     )
@@ -146,12 +123,11 @@ def is_valid(sg, logger, args):
 
 
 
-def entity_status_update_task_status(sg, logger, event, args):
+def shad_status(sg, logger, event, args):
     """
-    Parses a Shotgun_[entity]_Change args["entity_status_field"] EventLogEntry,
-    and if the new_value is set to args["target_status"], child Tasks are
-    updated to args["target_status"], unless they're already set to a value in
-    args["skip_statuses"].
+    Смотрит на статус тасков geo и txtr. Если они complete - таску shad
+    ставит статус rdy
+    если один из них 'rrq' blb 'ip' - ставит hld
 
     :param object sg: An authenticated Shotgun Python API instance.
     :param object logger: A standard logger instance.
@@ -170,11 +146,9 @@ def entity_status_update_task_status(sg, logger, event, args):
     event_id = event.get("id")
     
 
-    logger.debug('##### EVENT: %s' % pformat(event))
+    logger.debug('event: %s' % pformat(event))
 
     #------------------- rnd
-    logger.debug(pformat(event))
-    logger.debug(user)
     # if user['id'] != 198:
     #     logger.warning('#################################Not developer user. Skipping')
     #     return
@@ -190,12 +164,6 @@ def entity_status_update_task_status(sg, logger, event, args):
     if None in [event_id, field_name, entity, project, old_value, new_value, user]:
         logger.warning("Missing info in event dictionary, skipping.")
         return
-
-    # Bail if new_value isn't what we're looking for.
-    # if not new_value == args["target_status"]:
-    #     logger.debug("new_value is %s, not %s, skipping." % (new_value, args["target_status"]))
-    #     return
-
     # Make sure the event exists in Shotgun.
     sg_event = sg.find_one(
         "EventLogEntry",
@@ -242,32 +210,6 @@ def entity_status_update_task_status(sg, logger, event, args):
     batch_data = []
     update_message = []
 
-    # # Cue up a change to our entity's description field if our entity's
-    # # new_value is args["target_status"] and its description is None.
-    # if not entity["description"]:
-    #     update_message.append("%s with id %s" % (entity["type"], entity["id"]))
-    #     batch_data.append(
-    #         {
-    #             "request_type": "update",
-    #             "entity_type": entity["type"],
-    #             "entity_id": entity["id"],
-    #             "data": {
-    #                 "description": "%s set this %s to %s." % (
-    #                     user["name"],
-    #                     entity["type"],
-    #                     args["target_status"],
-    #                 )
-    #             }
-    #         }
-    #     )
-
-    # Find all the Tasks linked to our entity.
-    # tasks = sg.find(
-    #     "Task",
-    #     [["entity", "is", entity]],
-    #     ["sg_status_list"],
-    # )
-
     filters = [['tasks', 'is', event['entity']]]
     fields = []
 
@@ -277,10 +219,6 @@ def entity_status_update_task_status(sg, logger, event, args):
         if entity:
             logger.debug('For entity type %s found: %s' % (et, entity))
             break
-
-
-
-
 
     # Find all tasks with complete geo and txtr
     tasks = sg.find(

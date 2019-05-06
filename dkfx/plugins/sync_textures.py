@@ -121,9 +121,13 @@ def sync_textures(sg, logger, event, args):
         fields = ['path']
         #filesys_loc = sg.find_one('FilesystemLocation', filters, fields)
         filesys_locs = sg.find('FilesystemLocation', filters, fields)
+        
+        if not filesys_locs:
+            logger.warning('No one location found. Skipped.')
+            return
 
         if len(filesys_locs) > 1:
-            logger.error('Not single location: %s. Must be clean up')
+            logger.warning('Not single location: %s. Must be clean up')
             return
 
         filesys_loc = filesys_locs[0]
