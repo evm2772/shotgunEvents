@@ -1189,7 +1189,7 @@ def _getConfigPath():
         paths[:0] = [os.path.dirname(scriptPath)]
 
     # Search for a config file.
-    if os.environ.get('SG_EVENT_DAEMON'):
+    if os.environ.get('SG_EVENT_DAEMON_DEVELOP_MODE'): #use production config or dev
         config_name = 'shotgunEventDaemonD.conf'
         print ('DEVELOPMENT MODE')
     else:
