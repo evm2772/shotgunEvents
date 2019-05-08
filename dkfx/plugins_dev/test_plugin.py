@@ -50,33 +50,62 @@ def registerCallbacks(reg):
     reg.registerCallback(
         script_name,
         script_key,
-        shad_status,
+        test_plugin,
         eventFilter,
         args,
     )
     reg.logger.debug("Registered callback.")
 
 
-# EVENT: {'attribute_name': 'sg_status_list',
-#  'created_at': datetime.datetime(2019, 4, 30, 15, 4, 45, tzinfo=<shotgun_api3.lib.sgtimezone.LocalTimezone object at 0x7f9d6a0bd8d0>),
-#  'entity': {'id': 30495, 'name': 'ad', 'type': 'Task'},
-#  'event_type': 'Shotgun_Task_Change',
-#  'id': 2871499,
-#  'meta': {'attribute_name': 'sg_status_list',
-#           'entity_id': 30495,
-#           'entity_type': 'Task',
-#           'field_data_type': 'status_list',
-#           'new_value': 'rdy',
-#           'old_value': 'cmpt',
-#           'type': 'attribute_change'},
-#  'project': {'id': 92, 'name': 'SOUZ_S', 'type': 'Project'},
-#  'session_uuid': '51cb3b12-6a9a-11e9-b201-0242ac110004',
-#  'type': 'EventLogEntry',
-#  'user': {'id': 198, 'name': 'Evgeniy Melkov', 'type': 'HumanUser'}}
+def is_valid(sg, logger, args):
+    """
+    Validate our args.
+
+    :param sg: Shotgun API handle.
+    :param logger: Logger instance.
+    :param args: Any additional misc arguments passed through this plugin.
+    :returns: True if plugin is valid, None if not.
+    """
+
+    # Make sure args["entity_status_field"] is still in our entity schema.
+    try:
+        entity_schema = sg.schema_field_read(
+            args["entity_type"],
+            field_name=args["entity_status_field"],
+        )
+    except Exception, e:
+        logger.warning(
+            "%s does not exist in %s schema, skipping: %s" % (
+                args["entity_status_field"],
+                args["entity_type"],
+                e.message,
+            )
+        )
+        return
+
+    # Make sure args["target_status"] is in the entity schema.
+    if args["target_status"] not in entity_schema["sg_status_list"]["properties"]["valid_values"]["value"]:
+        logger.warning(
+            "%s is not in %s schema, plugin will never execute." % (
+                args["target_status"],
+                args["entity_type"],
+            )
+        )
+        return
+
+    # Make sure the Task schema has an args["target_status"] field.
+    task_schema = sg.schema_field_read(
+        "Task",
+        field_name="sg_status_list",
+    )
+    if args["target_status"] not in task_schema["sg_status_list"]["properties"]["valid_values"]["value"]:
+        logger.warning("%s is not in Task schema, plugin will never execute." % args["task_status"])
+        return
+
+    return True
 
 
-
-def shad_status(sg, logger, event, args):
+def test_plugin(sg, logger, event, args):
     """
     Смотрит на статус тасков geo и txtr. Если они complete - таску shad
     ставит статус rdy
