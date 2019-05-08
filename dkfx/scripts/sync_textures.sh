@@ -14,6 +14,6 @@ export PROJECT_ID=$3
 echo "STORAGE_TEXTURES_DIR = ${STORAGE_TEXTURES_DIR}"
 echo "PANASAS_TEXTURES_DIR = ${PANASAS_TEXTURES_DIR}"
 echo "PROJECT_ID = ${PROJECT_ID}"
-/usr/autodesk/maya/bin/mayapy /mnt/storage/rnd_tools/ppline/dev/shotgunEvents/dkfx/scripts/export_tx.py "$@"
+/usr/autodesk/maya/bin/mayapy /mnt/storage/rnd_tools/ppline/prod/shotgunEvents/dkfx/scripts/export_tx.py "$@"
 
 
