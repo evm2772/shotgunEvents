@@ -1,4 +1,4 @@
 docs/_build/doctrees
-shotgunEventDaemon.conf
+#shotgunEventDaemon.conf
 *.pyc
 /dkfx/log

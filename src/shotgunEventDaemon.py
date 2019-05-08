@@ -1189,9 +1189,16 @@ def _getConfigPath():
         paths[:0] = [os.path.dirname(scriptPath)]
 
     # Search for a config file.
+    if os.environ.get('SG_EVENT_DAEMON'):
+        config_name = 'shotgunEventDaemonD.conf'
+        print ('DEVELOPMENT MODE')
+    else:
+        config_name = 'shotgunEventDaemon.conf'
+        print ('PRODUCTION MODE')
     for path in paths:
-        path = os.path.join(path, 'shotgunEventDaemon.conf')
+        path = os.path.join(path, config_name)
         if os.path.exists(path):
+            print ('Config path: %s' % path)
             return path
 
     # No config file was found

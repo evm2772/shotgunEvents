@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export PYTHONPATH=${PYTHONPATH}:/mnt/storage/rnd_tools/ppline/prod/python-api
+export PYTHONPATH=${PYTHONPATH}:/mnt/storage/rnd_tools/ppline/dev/python-api
 
 
 export SG_SERVER='https://filmdirectionfx.shotgunstudio.com'
@@ -10,4 +10,4 @@ export SGDAEMON_SCRIPT_NAME=shotgunEventDaemon
 export SGDAEMON_SCRIPT_KEY='**************************'
 
 
-python2 /mnt/storage/rnd_tools/ppline/prod/shotgunEvents/src/shotgunEventDaemon.py foreground
+python2 /mnt/storage/rnd_tools/ppline/dev/shotgunEvents/src/shotgunEventDaemon.py foreground
