@@ -92,7 +92,7 @@ def sync_textures(sg, logger, event, args):
     :param event: A Shotgun EventLogEntry entity dictionary.
     :param args: Any additional misc arguments passed through this plugin.
     """
-    logger.debug("Event: %s" % pformat(dict(event)))
+
     task_name = event['entity']['name']
     new_status = event['meta']['new_value']
     old_status = event['meta']['old_value']
@@ -101,7 +101,7 @@ def sync_textures(sg, logger, event, args):
     logger.debug("%s status: %s --> %s" % (event['entity'], old_status, new_status))
 
     if task_name == 'txtr' and new_status == 'cmpt':
-
+        logger.debug('event: %s' % pformat(event))
         # найдем ассет или сабассет с этим таском
         # filters = [['tasks', 'is', event['entity']]]
         # fields = ['code']

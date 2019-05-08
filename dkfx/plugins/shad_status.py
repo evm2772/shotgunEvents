@@ -146,7 +146,7 @@ def shad_status(sg, logger, event, args):
     event_id = event.get("id")
     
 
-    logger.debug('event: %s' % pformat(event))
+
 
     #------------------- rnd
     # if user['id'] != 198:
@@ -205,6 +205,8 @@ def shad_status(sg, logger, event, args):
             )
         )
         return
+
+    logger.debug('event: %s' % pformat(event))
 
     # Init a list for an sg.batch command, and a list for collecting messages.
     batch_data = []
