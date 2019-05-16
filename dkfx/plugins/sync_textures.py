@@ -136,11 +136,11 @@ def sync_textures(sg, logger, event, args):
         return
 
 
-    if user['id'] != 198:
-        logger.warning('################################# Not developer user. Skipping')
-        return
-    else:
-        logger.warning('BINGO! DEVELOPER EVM ... ')
+    # if user['id'] != 198:
+    #     logger.warning('################################# Not developer user. Skipping')
+    #     return
+    # else:
+    #     logger.warning('BINGO! DEVELOPER EVM ... ')
 
 
     task_name = entity.get('name')
