@@ -19,7 +19,24 @@ import fnmatch
 from pprint import pformat, pprint
 import re
 
+
 def textures_parser(root_folder):
+    masks = ["*.bmp", "*.exr", "*.gif", "*.hdri", "*.jpeg", "*.jpg", "*.png", "*.psd", "*.tiff", "*.tif", "*.tga"]
+    includes = '|'.join([fnmatch.translate(x) for x in masks])
+    texture_paths = []
+    for (dirpath, dirnames, filenames) in os.walk(root_folder):
+        #if dirnames:
+        if filenames and re.match(r'.*v\d\d', dirpath):
+            print dirpath, dirnames, filenames
+            files = [f for f in filenames if re.match(includes, f)]
+            for f in files:
+                texture_paths.append(os.path.join(dirpath, f))
+    print('Files for sync: \n %s' % pformat(texture_paths))
+    return texture_paths
+
+
+
+def textures_parserOLD(root_folder):
     masks = ["*.bmp", "*.exr", "*.gif", "*.hdri", "*.jpeg", "*.jpg", "*.png", "*.psd", "*.tiff", "*.tif", "*.tga"]
     includes = '|'.join([fnmatch.translate(x) for x in masks])
     #print includes
@@ -283,7 +300,7 @@ class MakeTxThread (threading.Thread):
 
             tx_dst = tx_src.replace(os.environ.get('STORAGE_TEXTURES_DIR'), os.environ.get('PANASAS_TEXTURES_DIR'))
             #remove version folder:
-            tx_dst = re.sub(r'/v\d\d/', '/', tx_dst)
+            #tx_dst = re.sub(r'/v\d\d/', '/', tx_dst)
             # if tx_dst == tx_src:
             #     raise Exception('Inorect source location: %s' % tx_src)
             print 'SRC:  %s' % tx_src
@@ -291,6 +308,11 @@ class MakeTxThread (threading.Thread):
             update = need_update(tx_src, tx_dst)
             print 'need_update: %s' % update
             # directories must exists - checked in daemon plugin!
+            dir_dst = os.path.dirname(tx_dst)
+            if not os.path.isdir(dir_dst):
+                print ('"Panasas" textures directory is not found. Creating: %s' % dir_dst)
+                os.makedirs(dir_dst)
+                print ('"Panasas" textures directory was created:  %s' % dir_dst)
 
             if update:
                 dst_dir = os.path.dirname(tx_dst)
