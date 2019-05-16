@@ -136,6 +136,8 @@ def shad_status(sg, logger, event, args):
     :returns: None if the event can not be processed.
     """
 
+    logger.debug('entity: %s' % pformat(event))
+
     # Make some vars for convenience.
     field_name = event.get("attribute_name")
     entity = event.get("entity")
@@ -156,14 +158,18 @@ def shad_status(sg, logger, event, args):
     #     logger.warning('BINGO !!!!!!!!!!!!!')
     #-----------------------
 
-    if entity['name'] not in args['tasks']:
-        logger.warning("We are not interested in this task [%s], skipping." % entity['name'])
-        return
+
 
     # Make sure all our event keys contain values.
     if None in [event_id, field_name, entity, project, old_value, new_value, user]:
         logger.warning("Missing info in event dictionary, skipping.")
         return
+
+
+    if entity['name'] not in args['tasks']:
+        logger.warning("We are not interested in this task [%s], skipping." % entity['name'])
+        return
+
     # Make sure the event exists in Shotgun.
     sg_event = sg.find_one(
         "EventLogEntry",
