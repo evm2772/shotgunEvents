@@ -167,8 +167,8 @@ class MakeTxThread (threading.Thread):
             nodes = textureLine[3]
 
             colorSpace = 'Raw'
-            #if '_color' in os.path.basename(texture):
-            if 'color' == texture.split(os.sep)[-3]:
+            dir_name = texture.split(os.sep)[-3]
+            if 'color' in dir_name.split('_'):
                 colorSpace = 'sRGB'
 
 
