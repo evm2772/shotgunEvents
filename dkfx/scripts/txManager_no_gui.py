@@ -291,40 +291,43 @@ class MakeTxThread (threading.Thread):
         # an arnold scene was created above, let's delete it now
         if not arnoldUniverseActive:
             cmds.arnoldScene(mode="destroy")
-        from shared.utils.file_utils import need_update
-        import shutil
-        for f in [item[0] for item in textureList]:
-            basename = os.path.splitext(f)[0]
-            print '-'*200
-            tx_src = '%s.tx' % os.path.splitext(f)[0]
-            #tx_dst = os.path.join(os.environ.get('PANASAS_TEXTURES_DIR'), os.path.basename(tx_src))
 
-            tx_dst = tx_src.replace(os.environ.get('STORAGE_TEXTURES_DIR'), os.environ.get('PANASAS_TEXTURES_DIR'))
-            #remove version folder:
-            #tx_dst = re.sub(r'/v\d\d/', '/', tx_dst)
-            # if tx_dst == tx_src:
-            #     raise Exception('Inorect source location: %s' % tx_src)
-            print 'SRC:  %s' % tx_src
-            print 'DST:  %s' % tx_dst
-            update = need_update(tx_src, tx_dst)
-            print 'need_update: %s' % update
-            # directories must exists - checked in daemon plugin!
-            dir_dst = os.path.dirname(tx_dst)
-            if not os.path.isdir(dir_dst):
-                print ('"Panasas" textures directory is not found. Creating: %s' % dir_dst)
-                os.makedirs(dir_dst)
-                print ('"Panasas" textures directory was created:  %s' % dir_dst)
-
-            if update:
-                dst_dir = os.path.dirname(tx_dst)
-                if not os.path.isdir(dst_dir):
-                    print ('Creating: %s' % dst_dir)
-                    os.makedirs(dst_dir)
-                    print('directory was created:  %s' % dst_dir)
-                shutil.copyfile(tx_src, tx_dst)
-                print 'Updated: %s -> %s' % (tx_src, tx_dst)
-            else:
-                print 'Not updated: %s -> %s\n\n' % (tx_src, tx_dst)
+        print 'No copy. Converted in place.'
+        # No copy! Just convert!
+        # from shared.utils.file_utils import need_update
+        # import shutil
+        # for f in [item[0] for item in textureList]:
+        #     basename = os.path.splitext(f)[0]
+        #     print '-'*200
+        #     tx_src = '%s.tx' % os.path.splitext(f)[0]
+        #     #tx_dst = os.path.join(os.environ.get('PANASAS_TEXTURES_DIR'), os.path.basename(tx_src))
+        #
+        #     tx_dst = tx_src.replace(os.environ.get('STORAGE_TEXTURES_DIR'), os.environ.get('PANASAS_TEXTURES_DIR'))
+        #     #remove version folder:
+        #     #tx_dst = re.sub(r'/v\d\d/', '/', tx_dst)
+        #     # if tx_dst == tx_src:
+        #     #     raise Exception('Inorect source location: %s' % tx_src)
+        #     print 'SRC:  %s' % tx_src
+        #     print 'DST:  %s' % tx_dst
+        #     update = need_update(tx_src, tx_dst)
+        #     print 'need_update: %s' % update
+        #     # directories must exists - checked in daemon plugin!
+        #     dir_dst = os.path.dirname(tx_dst)
+        #     if not os.path.isdir(dir_dst):
+        #         print ('"Panasas" textures directory is not found. Creating: %s' % dir_dst)
+        #         os.makedirs(dir_dst)
+        #         print ('"Panasas" textures directory was created:  %s' % dir_dst)
+        #
+        #     if update:
+        #         dst_dir = os.path.dirname(tx_dst)
+        #         if not os.path.isdir(dst_dir):
+        #             print ('Creating: %s' % dst_dir)
+        #             os.makedirs(dst_dir)
+        #             print('directory was created:  %s' % dst_dir)
+        #         shutil.copyfile(tx_src, tx_dst)
+        #         print 'Updated: %s -> %s' % (tx_src, tx_dst)
+        #     else:
+        #         print 'Not updated: %s -> %s\n\n' % (tx_src, tx_dst)
 
 
 

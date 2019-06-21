@@ -5,8 +5,7 @@ import sys
 
 
 
-storage_textures_dir = sys.argv[1]
-panasas_textures_dir = sys.argv[2]
+panasas_textures_dir = sys.argv[1]
 
 
 try:
@@ -19,7 +18,7 @@ try:
     pm.colorManagementPrefs(e=1, viewTransformName="Rec 709 gamma")
     from mtoa import txManager_no_gui as txm
     reload(txm)
-    txm.do(storage_textures_dir)
+    txm.do(panasas_textures_dir)
 
 except Exception as ex:
     print traceback.format_exc()

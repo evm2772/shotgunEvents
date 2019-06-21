@@ -224,6 +224,10 @@ def sync_textures(sg, logger, event, args):
         # debug:
         cmd = os.path.normpath(os.path.join(os.path.dirname(__file__), '../scripts/sync_textures.sh %s %s %s 2>&1 | tee %s' %
                                             (storage_textures_dir, panasas_textures_dir, project_id, dst_log)))
+
+        cmd = os.path.normpath(
+            os.path.join(os.path.dirname(__file__), '../scripts/sync_textures.sh %s %s 2>&1 | tee %s' %
+                         (panasas_textures_dir, project_id, dst_log)))
         
         subprocess.Popen(cmd, shell=True)
 
