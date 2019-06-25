@@ -199,18 +199,18 @@ def sync_textures(sg, logger, event, args):
                 logger.debug('"Panasas" textures directory was created:  %s' % panasas_textures_dir)
 
 
-            # Path to source (Storage!)
-            storage_as_dir = panasas_as_dir.replace('/fd/projects/', '/mnt/storage/') # on storage!!!
-
-            if not os.path.isdir(storage_as_dir):
-                logger.error('"Storage" asset(subasset) directory is not found: %s' % storage_as_dir)
-                return
-
-            storage_textures_dir = os.path.join(storage_as_dir, 'textures')
-            logger.debug('"Storage" textures directory: %s' % storage_textures_dir)
-            if not os.path.isdir(storage_textures_dir):
-                logger.error('"Storage" textures directory not found: %s' % storage_textures_dir)
-                return
+            # # Path to source (Storage!) DEPRICATED!
+            # storage_as_dir = panasas_as_dir.replace('/fd/projects/', '/mnt/storage/') # on storage!!!
+            #
+            # if not os.path.isdir(storage_as_dir):
+            #     logger.error('"Storage" asset(subasset) directory is not found: %s' % storage_as_dir)
+            #     return
+            #
+            # storage_textures_dir = os.path.join(storage_as_dir, 'textures')
+            # logger.debug('"Storage" textures directory: %s' % storage_textures_dir)
+            # if not os.path.isdir(storage_textures_dir):
+            #     logger.error('"Storage" textures directory not found: %s' % storage_textures_dir)
+            #     return
             
             #files = textures_parser(storage_textures_dir, logger)
         else:
@@ -222,8 +222,9 @@ def sync_textures(sg, logger, event, args):
         #                                     (storage_textures_dir, panasas_textures_dir, project_id, dst_log)))
 
         # debug:
-        cmd = os.path.normpath(os.path.join(os.path.dirname(__file__), '../scripts/sync_textures.sh %s %s %s 2>&1 | tee %s' %
-                                            (storage_textures_dir, panasas_textures_dir, project_id, dst_log)))
+        #DEPRICATED
+        # cmd = os.path.normpath(os.path.join(os.path.dirname(__file__), '../scripts/sync_textures.sh %s %s %s 2>&1 | tee %s' %
+        #                                     (storage_textures_dir, panasas_textures_dir, project_id, dst_log)))
 
         cmd = os.path.normpath(
             os.path.join(os.path.dirname(__file__), '../scripts/sync_textures.sh %s %s 2>&1 | tee %s' %
