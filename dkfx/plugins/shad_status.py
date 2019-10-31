@@ -150,13 +150,13 @@ def shad_status(sg, logger, event, args):
 
 
 
-    #------------------- rnd
+    # #------------------- rnd
     # if user['id'] != 198:
     #     logger.warning('#################################Not developer user. Skipping')
     #     return
     # else:
     #     logger.warning('BINGO !!!!!!!!!!!!!')
-    #-----------------------
+    # #-----------------------
 
 
 
@@ -260,11 +260,17 @@ def shad_status(sg, logger, event, args):
     logger.debug('geo_st  = %s' % geo_st)
 
     new_shad_st = None
-    if txtr_st == 'cmpt' and geo_st == 'cmpt':
-        new_shad_st = 'rdy'
 
-    if txtr_st in ['rrq', 'ip'] or geo_st in ['rrq', 'ip']:
-        new_shad_st = 'hld'
+    if txtr_st == 'cmpt' and geo_st == 'cmpt' and (shad_st in ['wtg', 'hld']):
+        new_shad_st = 'rdy'
+    #
+    # if (txtr_st == 'cmpt' and geo_st == 'cmpt') and (shad_st in ['change']):
+    #     new_shad_st = 'rrq'
+
+
+
+    if ((txtr_st in ['ip']) or (geo_st in ['ip'])) and (shad_st not in ['wtg', 'rdy']):
+        new_shad_st = 'change'
 
     if not new_shad_st:
         logger.debug('Not triggered. Skipping')
