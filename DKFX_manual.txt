@@ -1,0 +1,10 @@
+Для разработки -
+Плагины находятся в папке plugins_dev
+запускается дев_демон start_daemonD.sh
+
+
+
+Войти на виртуалку
+shh shotgun
+su
+screen -r
