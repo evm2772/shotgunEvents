@@ -3,9 +3,7 @@
 import os
 import shotgun_api3
 from pprint import pprint, pformat
-'''
-Doc: http://192.168.2.146:8090/pages/viewpage.action?pageId=14451075
-'''
+
 def registerCallbacks(reg):
     """
     This function is run when the Shotgun Event Daemon starts, if this file
@@ -21,10 +19,10 @@ def registerCallbacks(reg):
     # User-defined plugin args, change at will.
     args = {
         "target_status": "cmpt",
-        "tasks": ['txtr', 'geo'],  # trigger tasks
+        "tasks": ['light'],  # trigger tasks
         "entity_status_field": "sg_status_list",
         "entity_type": "Task",
-        "linked_entities": ["Asset", "CustomEntity01"],
+        "linked_entities": ["Shot"],
         "skip_statuses": []  #"fin", "na", "hld"],
     }
 
@@ -52,7 +50,7 @@ def registerCallbacks(reg):
     reg.registerCallback(
         script_name,
         script_key,
-        shad_status,
+        comp_status,
         eventFilter,
         args,
     )
@@ -125,7 +123,7 @@ def is_valid(sg, logger, args):
 
 
 
-def shad_status(sg, logger, event, args):
+def comp_status(sg, logger, event, args):
     """
     Смотрит на статус тасков geo и txtr. Если они complete - таску shad
     ставит статус rdy
@@ -151,10 +149,10 @@ def shad_status(sg, logger, event, args):
 
     # #------------------- rnd
     # if user['id'] != 198:
-    #     logger.warning('#################################Not developer user. Skipping')
+    #     logger.warning('Not developer user. Skipping')
     #     return
     # else:
-    #     logger.warning('BINGO !!!!!!!!!!!!!')
+    #     logger.warning('=BINGO=' * 20)
     # #-----------------------
 
     # Make sure all our event keys contain values.
@@ -230,65 +228,72 @@ def shad_status(sg, logger, event, args):
         "Task",
         [
             ["entity", "is", entity],
-            ["content", "in", ["geo", "txtr", "shad"]]
+            ["content", "in", ["comp", "light"]]
          ],
         ["sg_status_list", "content"],
     )
-    # tasks = [{'content': 'geo', 'id': 30908, 'sg_status_list': 'cmpt', 'type': 'Task'}, ...]
-    # must contain 3 tasks:
 
+    # must contain 1 task:
+    logger.debug('For entity type %s found: %s' % (et, tasks))
     tasks_statuses = {}
     for task in tasks:
         tasks_statuses[task['content']] = task['sg_status_list']
     logger.debug('All tasks: %s' % pformat(tasks))
-    if len(tasks_statuses.keys()) != 3:
+    logger.debug('='*100)
 
-        logger.warning('Not all tasks found. Must be "txtr", "geo", "shad"')
+    if len(tasks_statuses.keys()) != 2:
+
+        logger.warning('Must be "comp", "light"')
         return
     logger.debug('Task statuses %s' % pformat(tasks_statuses))
     # Ex: Task statuses = {'geo': 'cmpt', 'shad': 'wtg', 'txtr': 'cmpt'}
     # wtg, rdy
-    shad_st = tasks_statuses['shad']
-    txtr_st = tasks_statuses['txtr']
-    geo_st = tasks_statuses['geo']
+    comp_st = tasks_statuses['comp']
+    light_st = tasks_statuses['light']
 
-    logger.debug('shad_st = %s' % shad_st)
-    logger.debug('txtr_st = %s' % txtr_st)
-    logger.debug('geo_st  = %s' % geo_st)
+    logger.debug('comp_st = %s' % comp_st)
+    logger.debug('light_st  = %s' % light_st)
 
-    new_shad_st = None
+    new_comp_st = None
+    # -----------------------------
+    logger.debug('NEW=%s OLD=%s' % (old_value, new_value))
+    # if old_value != new_value:
+    #     logger.debug('CHANGED: %s --> %s' % (old_value, new_value))
 
-    if txtr_st == 'cmpt' and geo_st == 'cmpt' and (shad_st in ['wtg']):
-        new_shad_st = 'rdy'
 
-    # if ((txtr_st in ['ip']) or (geo_st in ['ip'])) and (shad_st not in ['wtg']):
-    #     new_shad_st = 'change'
+    # тут можно подправить if else  comp_st in ['wtg']
+    if light_st == 'cmpt' and (comp_st in ['wtg']):
+        new_comp_st = 'rdy'
 
-    if old_value != new_value and (shad_st not in ['wtg']):
+
+    if light_st in ['cmpt'] and comp_st not in ['wtg']:
+    #if old_value != new_value and (comp_st not in ['wtg']):
         logger.debug('CHANGED: %s --> %s' % (old_value, new_value))
-        new_shad_st = 'change'
+        new_comp_st = 'change'
+    # if light_st in ['ip'] and comp_st not in ['wtg']:
+    #     new_comp_st = 'change'
 
 
-
-    if not new_shad_st:
+    # -----------------------------
+    if not new_comp_st:
         logger.debug('Not triggered. Skipping')
         return
-    if shad_st == new_shad_st:
-        logger.debug('New status [%s] she same as old. Skipping' % new_shad_st)
+    if comp_st == new_comp_st:
+        logger.debug('New status [%s] she same as old. Skipping' % new_comp_st)
         return
-
+    logger.debug('='*100)
     for task in tasks:
         # skip:
-        if task['content'] in ['geo', 'txtr']:
+        if task['content'] in ['light']:
             continue
-        if shad_st not in args["skip_statuses"]:
+        if comp_st not in args["skip_statuses"]:
             update_message.append("Task with id %s" % task["id"])
             batch_data.append(
                 {
                     "request_type": "update",
                     "entity_type": "Task",
                     "entity_id": task["id"],
-                    "data": {"sg_status_list": new_shad_st},
+                    "data": {"sg_status_list": new_comp_st},
                 }
             )
 
