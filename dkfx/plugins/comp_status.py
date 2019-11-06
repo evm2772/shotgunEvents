@@ -136,7 +136,7 @@ def comp_status(sg, logger, event, args):
     :returns: None if the event can not be processed.
     """
 
-    logger.debug('entity: %s' % pformat(event))
+
 
     # Make some vars for convenience.
     field_name = event.get("attribute_name")
@@ -147,14 +147,16 @@ def comp_status(sg, logger, event, args):
     user = event.get("user")
     event_id = event.get("id")
 
-    # #------------------- rnd
-    # if user['id'] != 198:
-    #     logger.warning('Not developer user. Skipping')
-    #     return
-    # else:
-    #     logger.warning('=BINGO=' * 20)
-    # #-----------------------
+    logger.debug('new value: %s old value: %s' % (old_value, new_value))
 
+    if os.environ.get("SG_EVENT_DAEMON_DEVELOP_MODE"):
+        if user['id'] != 198:
+            logger.warning('DEVMODE: -------------Not developer user. Skipping ------------')
+            return
+        else:
+            logger.warning('DEVMODE: -------------Dev user welcome! ---------------')
+
+    logger.debug('entity: %s' % pformat(event))
     # Make sure all our event keys contain values.
     if None in [event_id, field_name, entity, project, old_value, new_value, user]:
         logger.warning("Missing info in event dictionary, skipping.")
@@ -238,11 +240,9 @@ def comp_status(sg, logger, event, args):
     tasks_statuses = {}
     for task in tasks:
         tasks_statuses[task['content']] = task['sg_status_list']
-    logger.debug('All tasks: %s' % pformat(tasks))
-    logger.debug('='*100)
+    logger.debug('All tasks found: %s' % pformat(tasks))
 
     if len(tasks_statuses.keys()) != 2:
-
         logger.warning('Must be "comp", "light"')
         return
     logger.debug('Task statuses %s' % pformat(tasks_statuses))
@@ -255,33 +255,22 @@ def comp_status(sg, logger, event, args):
     logger.debug('light_st  = %s' % light_st)
 
     new_comp_st = None
-    # -----------------------------
-    logger.debug('NEW=%s OLD=%s' % (old_value, new_value))
-    # if old_value != new_value:
-    #     logger.debug('CHANGED: %s --> %s' % (old_value, new_value))
-
-
-    # тут можно подправить if else  comp_st in ['wtg']
     if light_st == 'cmpt' and (comp_st in ['wtg']):
+        logger.debug('Trigger status chanched: %s --> %s' % (old_value, new_value))
         new_comp_st = 'rdy'
 
-
     if light_st in ['cmpt'] and comp_st not in ['wtg']:
-    #if old_value != new_value and (comp_st not in ['wtg']):
-        logger.debug('CHANGED: %s --> %s' % (old_value, new_value))
-        new_comp_st = 'change'
-    # if light_st in ['ip'] and comp_st not in ['wtg']:
-    #     new_comp_st = 'change'
+        logger.debug('Trigger status chanched: %s --> %s' % (old_value, new_value))
+        new_comp_st = 'rrq'
 
-
-    # -----------------------------
     if not new_comp_st:
         logger.debug('Not triggered. Skipping')
         return
+
+    logger.debug('new satus: %s' % (new_comp_st,))
     if comp_st == new_comp_st:
         logger.debug('New status [%s] she same as old. Skipping' % new_comp_st)
         return
-    logger.debug('='*100)
     for task in tasks:
         # skip:
         if task['content'] in ['light']:

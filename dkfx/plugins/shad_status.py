@@ -138,6 +138,7 @@ def shad_status(sg, logger, event, args):
     :returns: None if the event can not be processed.
     """
 
+
     logger.debug('entity: %s' % pformat(event))
 
     # Make some vars for convenience.
@@ -149,13 +150,12 @@ def shad_status(sg, logger, event, args):
     user = event.get("user")
     event_id = event.get("id")
 
-    # #------------------- rnd
-    # if user['id'] != 198:
-    #     logger.warning('#################################Not developer user. Skipping')
-    #     return
-    # else:
-    #     logger.warning('BINGO !!!!!!!!!!!!!')
-    # #-----------------------
+    if os.environ.get("SG_EVENT_DAEMON_DEVELOP_MODE"):
+        if user['id'] != 198:
+            logger.warning('DEVMODE: -------------Not developer user. Skipping ------------')
+            return
+        else:
+            logger.warning('DEVMODE: -------------Dev user welcome! ---------------')
 
     # Make sure all our event keys contain values.
     if None in [event_id, field_name, entity, project, old_value, new_value, user]:
@@ -259,17 +259,17 @@ def shad_status(sg, logger, event, args):
     new_shad_st = None
 
     if txtr_st == 'cmpt' and geo_st == 'cmpt' and (shad_st in ['wtg']):
+        logger.debug('Trigger status chanched: %s --> %s' % (old_value, new_value))
         new_shad_st = 'rdy'
 
     # if ((txtr_st in ['ip']) or (geo_st in ['ip'])) and (shad_st not in ['wtg']):
     #     new_shad_st = 'change'
 
-    if old_value != new_value and (shad_st not in ['wtg']):
-        logger.debug('CHANGED: %s --> %s' % (old_value, new_value))
-        new_shad_st = 'change'
+    if txtr_st == 'cmpt' and geo_st == 'cmpt' and (shad_st not in ['wtg']):
+        logger.debug('Trigger status chanched: %s --> %s' % (old_value, new_value))
+        new_shad_st = 'rrq'
 
-
-
+    logger.debug('new satus: %s' % (new_shad_st,))
     if not new_shad_st:
         logger.debug('Not triggered. Skipping')
         return
