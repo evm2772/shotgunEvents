@@ -225,8 +225,9 @@ def comp_status(sg, logger, event, args):
             logger.debug('For entity type %s found: %s' % (et, entity))
             break
 
-
-    shot_status = entity ['sg_status_list'] #---------------------------------!!!!
+    if entity['sg_status_list'] == 'cmpt':
+        logger.debug('For entity %s status "Complete". Skipping daemon work."' % (entity))
+        return
 
     # Find all tasks with complete geo and txtr
     tasks = sg.find(
