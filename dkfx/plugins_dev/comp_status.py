@@ -216,7 +216,7 @@ def comp_status(sg, logger, event, args):
     update_message = []
 
     filters = [['tasks', 'is', event['entity']]]
-    fields = []
+    fields = ['sg_status_list']
 
     entity = None
     for et in args['linked_entities']:
@@ -224,6 +224,9 @@ def comp_status(sg, logger, event, args):
         if entity:
             logger.debug('For entity type %s found: %s' % (et, entity))
             break
+
+
+    shot_status = entity ['sg_status_list'] #---------------------------------!!!!
 
     # Find all tasks with complete geo and txtr
     tasks = sg.find(
